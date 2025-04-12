@@ -1,0 +1,12 @@
+[package]
+name = "tinyphp-rs"
+version = "0.1.0"
+edition = "2021"
+description = "A tiny PHP subset compiler written in Rust"
+authors = ["abbychau"]
+
+[dependencies]
+lazy_static = "1.4.0"
+regex = "1.10.2"
+thiserror = "1.0.50"
+
