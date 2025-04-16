@@ -215,6 +215,28 @@ impl AsmGenerator {
                 writeln!(self.asm_code, "    imul rbx").unwrap();
                 writeln!(self.asm_code, "    push rax").unwrap();
             }
+            Instruction::Divide => {
+                writeln!(self.asm_code, "    # Divide").unwrap();
+                writeln!(self.asm_code, "    pop rcx  # Second operand").unwrap();
+                writeln!(self.asm_code, "    pop rax  # First operand").unwrap();
+                writeln!(self.asm_code, "    cqo  # Sign-extend RAX into RDX:RAX").unwrap();
+                writeln!(self.asm_code, "    idiv rcx").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::Modulo => {
+                writeln!(self.asm_code, "    # Modulo").unwrap();
+                writeln!(self.asm_code, "    pop rcx  # Second operand").unwrap();
+                writeln!(self.asm_code, "    pop rax  # First operand").unwrap();
+                writeln!(self.asm_code, "    cqo  # Sign-extend RAX into RDX:RAX").unwrap();
+                writeln!(self.asm_code, "    idiv rcx").unwrap();
+                writeln!(self.asm_code, "    push rdx  # Remainder is in RDX").unwrap();
+            }
+            Instruction::Negate => {
+                writeln!(self.asm_code, "    # Negate").unwrap();
+                writeln!(self.asm_code, "    pop rax  # Operand").unwrap();
+                writeln!(self.asm_code, "    neg rax").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
             Instruction::Echo => {
                 writeln!(self.asm_code, "    # Echo").unwrap();
                 // Windows x64 calling convention: rcx, rdx, r8, r9
@@ -241,44 +263,83 @@ impl AsmGenerator {
                 writeln!(self.asm_code, ".echo_done_{}:", self.label_counter).unwrap();
                 self.label_counter += 1;
 
+                // We're not adding a newline by default to allow for string concatenation
+            }
+            Instruction::EchoLine => {
+                writeln!(self.asm_code, "    # EchoLine").unwrap();
+                // Windows x64 calling convention: rcx, rdx, r8, r9
+                writeln!(self.asm_code, "    pop rdx  # Value to print (second arg)").unwrap();
+
+                // Check if it's a string or an integer
+                writeln!(self.asm_code, "    # Check if it's a string or an integer").unwrap();
+                writeln!(self.asm_code, "    cmp rdx, 100000  # Assume values < 100000 are integers").unwrap();
+                writeln!(self.asm_code, "    jge .print_string_line_{}", self.label_counter).unwrap();
+
+                // Print as integer
+                writeln!(self.asm_code, "    # Print as integer").unwrap();
+                writeln!(self.asm_code, "    lea rcx, [rip + fmt_int]  # Format string (first arg)").unwrap();
+                writeln!(self.asm_code, "    mov rax, 0").unwrap();
+                writeln!(self.asm_code, "    call printf").unwrap();
+                writeln!(self.asm_code, "    jmp .echo_line_done_{}", self.label_counter).unwrap();
+
+                // Print as string
+                writeln!(self.asm_code, ".print_string_line_{}:", self.label_counter).unwrap();
+                writeln!(self.asm_code, "    lea rcx, [rip + fmt_str]  # Format string (first arg)").unwrap();
+                writeln!(self.asm_code, "    mov rax, 0").unwrap();
+                writeln!(self.asm_code, "    call printf").unwrap();
+
+                writeln!(self.asm_code, ".echo_line_done_{}:", self.label_counter).unwrap();
+                self.label_counter += 1;
+
                 // Add newline
                 writeln!(self.asm_code, "    mov rcx, 10  # '\\n' (first arg)").unwrap();
                 writeln!(self.asm_code, "    call putchar").unwrap();
             }
             Instruction::Concat => {
                 writeln!(self.asm_code, "    # Concat").unwrap();
-                // For simplicity, we'll just convert the second operand to a string and use it
-                // In a real implementation, we would need to allocate memory and copy both strings
-                writeln!(self.asm_code, "    pop rdx  # Second operand").unwrap();
-                writeln!(self.asm_code, "    pop rcx  # First operand (string)").unwrap();
+                // We'll use the strcat function from the C standard library
+                writeln!(self.asm_code, "    pop rdx  # Second operand (string to append)").unwrap();
+                writeln!(self.asm_code, "    pop rcx  # First operand (destination string)").unwrap();
 
-                // Check if second operand is an integer
-                writeln!(self.asm_code, "    cmp rdx, 100000  # Assume values < 100000 are integers").unwrap();
-                writeln!(self.asm_code, "    jge .concat_string_{}", self.label_counter).unwrap();
+                // Allocate space for the concatenated string
+                writeln!(self.asm_code, "    sub rsp, 512  # Reserve space for concatenated string").unwrap();
+                writeln!(self.asm_code, "    mov r8, rsp  # Store buffer address").unwrap();
 
-                // Convert integer to string and use it
-                writeln!(self.asm_code, "    # Convert integer to string").unwrap();
-                writeln!(self.asm_code, "    push rcx  # Save first operand").unwrap();
-                writeln!(self.asm_code, "    mov rcx, [rip + fmt_int]  # Format string").unwrap();
-                writeln!(self.asm_code, "    sub rsp, 64  # Reserve space for string buffer").unwrap();
-                writeln!(self.asm_code, "    lea r8, [rsp]  # Buffer address").unwrap();
-                writeln!(self.asm_code, "    mov r9, 64  # Buffer size").unwrap();
-                writeln!(self.asm_code, "    mov rax, 0").unwrap();
-                writeln!(self.asm_code, "    call sprintf").unwrap();
-                writeln!(self.asm_code, "    lea rdx, [rsp]  # Get buffer address").unwrap();
-                writeln!(self.asm_code, "    add rsp, 64  # Restore stack").unwrap();
-                writeln!(self.asm_code, "    pop rcx  # Restore first operand").unwrap();
+                // Copy the first string to the buffer
+                writeln!(self.asm_code, "    mov r9, rcx  # Source (first string)").unwrap();
+                writeln!(self.asm_code, "    mov r10, r8  # Destination (buffer)").unwrap();
+                writeln!(self.asm_code, ".copy_first_{}:", self.label_counter).unwrap();
+                writeln!(self.asm_code, "    mov al, [r9]  # Load character").unwrap();
+                writeln!(self.asm_code, "    mov [r10], al  # Store character").unwrap();
+                writeln!(self.asm_code, "    inc r9  # Next source character").unwrap();
+                writeln!(self.asm_code, "    inc r10  # Next destination character").unwrap();
+                writeln!(self.asm_code, "    test al, al  # Check for null terminator").unwrap();
+                writeln!(self.asm_code, "    jnz .copy_first_{}", self.label_counter).unwrap();
 
-                writeln!(self.asm_code, "    jmp .concat_done_{}", self.label_counter).unwrap();
+                // Adjust destination pointer to overwrite the null terminator
+                writeln!(self.asm_code, "    dec r10  # Back up to null terminator").unwrap();
 
-                // Use second operand as string
-                writeln!(self.asm_code, ".concat_string_{}:", self.label_counter).unwrap();
+                // Copy the second string to the buffer (append)
+                writeln!(self.asm_code, "    mov r9, rdx  # Source (second string)").unwrap();
+                writeln!(self.asm_code, ".copy_second_{}:", self.label_counter).unwrap();
+                writeln!(self.asm_code, "    mov al, [r9]  # Load character").unwrap();
+                writeln!(self.asm_code, "    mov [r10], al  # Store character").unwrap();
+                writeln!(self.asm_code, "    inc r9  # Next source character").unwrap();
+                writeln!(self.asm_code, "    inc r10  # Next destination character").unwrap();
+                writeln!(self.asm_code, "    test al, al  # Check for null terminator").unwrap();
+                writeln!(self.asm_code, "    jnz .copy_second_{}", self.label_counter).unwrap();
 
-                writeln!(self.asm_code, ".concat_done_{}:", self.label_counter).unwrap();
+                // Add the concatenated string to string literals
+                let str_index = self.string_literals.len();
+                self.string_literals.push("<concatenated string>".to_string()); // Add a placeholder
+
+                // Create a new string literal for the concatenated string
+                writeln!(self.asm_code, "    # Create a new string literal for the concatenated string").unwrap();
+                writeln!(self.asm_code, "    lea rax, [rip + str_{}]  # Get address of string literal", str_index).unwrap();
+                writeln!(self.asm_code, "    add rsp, 512  # Restore stack").unwrap();
+                writeln!(self.asm_code, "    push rax  # Push result").unwrap();
+
                 self.label_counter += 1;
-
-                // For now, just use the first string
-                writeln!(self.asm_code, "    push rcx  # Push first string").unwrap();
             }
             Instruction::LoadVar(name) => {
                 writeln!(self.asm_code, "    # LoadVar(\"{}\")", name).unwrap();
@@ -295,6 +356,108 @@ impl AsmGenerator {
                 writeln!(self.asm_code, "    mov [rbp - {}], rax  # Store variable", offset).unwrap();
                 // Push the value back on the stack (PHP assignment is an expression)
                 writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::Greater => {
+                writeln!(self.asm_code, "    # Greater").unwrap();
+                writeln!(self.asm_code, "    pop rax  # Second operand").unwrap();
+                writeln!(self.asm_code, "    pop rbx  # First operand").unwrap();
+                writeln!(self.asm_code, "    cmp rbx, rax").unwrap();
+                writeln!(self.asm_code, "    setg al").unwrap();
+                writeln!(self.asm_code, "    movzx rax, al").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::Less => {
+                writeln!(self.asm_code, "    # Less").unwrap();
+                writeln!(self.asm_code, "    pop rax  # Second operand").unwrap();
+                writeln!(self.asm_code, "    pop rbx  # First operand").unwrap();
+                writeln!(self.asm_code, "    cmp rbx, rax").unwrap();
+                writeln!(self.asm_code, "    setl al").unwrap();
+                writeln!(self.asm_code, "    movzx rax, al").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::LessEqual => {
+                writeln!(self.asm_code, "    # LessEqual").unwrap();
+                writeln!(self.asm_code, "    pop rax  # Second operand").unwrap();
+                writeln!(self.asm_code, "    pop rbx  # First operand").unwrap();
+                writeln!(self.asm_code, "    cmp rbx, rax").unwrap();
+                writeln!(self.asm_code, "    setle al").unwrap();
+                writeln!(self.asm_code, "    movzx rax, al").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::Equal => {
+                writeln!(self.asm_code, "    # Equal").unwrap();
+                writeln!(self.asm_code, "    pop rax  # Second operand").unwrap();
+                writeln!(self.asm_code, "    pop rbx  # First operand").unwrap();
+                writeln!(self.asm_code, "    cmp rbx, rax").unwrap();
+                writeln!(self.asm_code, "    sete al").unwrap();
+                writeln!(self.asm_code, "    movzx rax, al").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::NotEqual => {
+                writeln!(self.asm_code, "    # NotEqual").unwrap();
+                writeln!(self.asm_code, "    pop rax  # Second operand").unwrap();
+                writeln!(self.asm_code, "    pop rbx  # First operand").unwrap();
+                writeln!(self.asm_code, "    cmp rbx, rax").unwrap();
+                writeln!(self.asm_code, "    setne al").unwrap();
+                writeln!(self.asm_code, "    movzx rax, al").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::GreaterEqual => {
+                writeln!(self.asm_code, "    # GreaterEqual").unwrap();
+                writeln!(self.asm_code, "    pop rax  # Second operand").unwrap();
+                writeln!(self.asm_code, "    pop rbx  # First operand").unwrap();
+                writeln!(self.asm_code, "    cmp rbx, rax").unwrap();
+                writeln!(self.asm_code, "    setge al").unwrap();
+                writeln!(self.asm_code, "    movzx rax, al").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::LogicalAnd => {
+                writeln!(self.asm_code, "    # LogicalAnd").unwrap();
+                writeln!(self.asm_code, "    pop rax  # Second operand").unwrap();
+                writeln!(self.asm_code, "    pop rbx  # First operand").unwrap();
+                writeln!(self.asm_code, "    and rax, rbx").unwrap();
+                writeln!(self.asm_code, "    cmp rax, 0").unwrap();
+                writeln!(self.asm_code, "    setne al").unwrap();
+                writeln!(self.asm_code, "    movzx rax, al").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::LogicalOr => {
+                writeln!(self.asm_code, "    # LogicalOr").unwrap();
+                writeln!(self.asm_code, "    pop rax  # Second operand").unwrap();
+                writeln!(self.asm_code, "    pop rbx  # First operand").unwrap();
+                writeln!(self.asm_code, "    or rax, rbx").unwrap();
+                writeln!(self.asm_code, "    cmp rax, 0").unwrap();
+                writeln!(self.asm_code, "    setne al").unwrap();
+                writeln!(self.asm_code, "    movzx rax, al").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::LogicalNot => {
+                writeln!(self.asm_code, "    # LogicalNot").unwrap();
+                writeln!(self.asm_code, "    pop rax  # Operand").unwrap();
+                writeln!(self.asm_code, "    cmp rax, 0").unwrap();
+                writeln!(self.asm_code, "    sete al").unwrap();
+                writeln!(self.asm_code, "    movzx rax, al").unwrap();
+                writeln!(self.asm_code, "    push rax").unwrap();
+            }
+            Instruction::JumpIfFalse(addr) => {
+                writeln!(self.asm_code, "    # JumpIfFalse({})", addr).unwrap();
+                writeln!(self.asm_code, "    pop rax  # Condition").unwrap();
+                writeln!(self.asm_code, "    cmp rax, 0").unwrap();
+                writeln!(self.asm_code, "    je .label_{}", addr).unwrap();
+            }
+            Instruction::Jump(addr) => {
+                writeln!(self.asm_code, "    # Jump({})", addr).unwrap();
+                writeln!(self.asm_code, "    jmp .label_{}", addr).unwrap();
+            }
+            Instruction::JumpIfTrue(addr) => {
+                writeln!(self.asm_code, "    # JumpIfTrue({})", addr).unwrap();
+                writeln!(self.asm_code, "    pop rax  # Condition").unwrap();
+                writeln!(self.asm_code, "    cmp rax, 0").unwrap();
+                writeln!(self.asm_code, "    jne .label_{}", addr).unwrap();
+            }
+            // Add labels for jump targets
+            Instruction::Label(addr) => {
+                writeln!(self.asm_code, ".label_{}:", addr).unwrap();
             }
             // Simplified implementation for other instructions
             _ => {

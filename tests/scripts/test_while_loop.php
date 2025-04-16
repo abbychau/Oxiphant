@@ -17,7 +17,11 @@ while ($i <= 3) {
     $j = 1;
     while ($j <= 3) {
         $result = $i * $j;
-        echo "$i x $j = $result";
+        echo $i;
+        echo " x ";
+        echo $j;
+        echo " = ";
+        echo $result;
         $j = $j + 1;
     }
     $i = $i + 1;

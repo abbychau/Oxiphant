@@ -8,6 +8,9 @@ if (-not (Test-Path "tests\output")) {
     New-Item -ItemType Directory -Path "tests\output" | Out-Null
 }
 
+# empty output folder
+Remove-Item -Path "tests\output\*" -Force
+
 # Compile and run each script
 foreach ($script in $scripts) {
     Write-Host "===== Testing $script =====" -ForegroundColor Green

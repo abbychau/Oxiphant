@@ -12,9 +12,15 @@ if (-not (Test-Path $scriptPath)) {
     exit 1
 }
 
-# Create output paths
-$outputExe = "tests\output\$ScriptName.exe"
-$outputAsm = "tests\output\$ScriptName.s"
+# Create output directory if it doesn't exist
+if (-not (Test-Path "tests\output")) {
+    New-Item -ItemType Directory -Path "tests\output" -Force | Out-Null
+}
+
+# Create output paths with a timestamp to avoid conflicts
+$timestamp = Get-Date -Format "yyyyMMddHHmmss"
+$outputExe = "tests\output\$ScriptName-$timestamp.exe"
+$outputAsm = "tests\output\$ScriptName-$timestamp.s"
 
 # Compile the script
 Write-Host "Compiling $scriptPath to $outputExe..."

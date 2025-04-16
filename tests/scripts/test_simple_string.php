@@ -12,6 +12,10 @@ echo $greeting;
 echo $name;
 
 // Simple concatenation
-$message = "Hello, " . "PHP!";
+echo "Hello, ";
+echo "PHP!";
+
+// Alternative approach
+$message = "Hello, PHP!";
 echo $message;
 ?>

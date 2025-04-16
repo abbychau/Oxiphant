@@ -51,6 +51,7 @@ pub enum Instruction {
     Jump(usize),         // Jump to absolute address
     JumpIfFalse(usize),  // Jump to absolute address if top of stack is false
     JumpIfTrue(usize),   // Jump to absolute address if top of stack is true
+    Label(usize),        // Label for jumps
 
     // Function operations
     Call(String, usize), // Function name, argument count
@@ -58,6 +59,7 @@ pub enum Instruction {
 
     // I/O operations
     Echo,
+    EchoLine, // Echo with a newline
 
     // String operations
     Concat,
@@ -136,21 +138,33 @@ impl CodeGenerator {
                     let else_start = self.current_instructions.len();
                     self.current_instructions[jump_to_else] = Instruction::JumpIfFalse(else_start);
 
+                    // Add a label for the else branch
+                    self.current_instructions.push(Instruction::Label(else_start));
+
                     // Generate code for the else branch
                     self.generate_node(else_branch)?;
 
                     // Update the jump over else
                     let after_else = self.current_instructions.len();
                     self.current_instructions[jump_over_else] = Instruction::Jump(after_else);
+
+                    // Add a label for after the else branch
+                    self.current_instructions.push(Instruction::Label(after_else));
                 } else {
                     // Update the jump to else (which is actually the end of the if statement)
                     let after_if = self.current_instructions.len();
                     self.current_instructions[jump_to_else] = Instruction::JumpIfFalse(after_if);
+
+                    // Add a label for after the if statement
+                    self.current_instructions.push(Instruction::Label(after_if));
                 }
             }
             Node::WhileStmt { condition, body, .. } => {
                 // Loop start
                 let loop_start = self.current_instructions.len();
+
+                // Add a label for the loop start
+                self.current_instructions.push(Instruction::Label(loop_start));
 
                 // Generate code for the condition
                 self.generate_node(condition)?;
@@ -168,6 +182,9 @@ impl CodeGenerator {
                 // Update the jump out
                 let after_loop = self.current_instructions.len();
                 self.current_instructions[jump_out] = Instruction::JumpIfFalse(after_loop);
+
+                // Add a label for after the loop
+                self.current_instructions.push(Instruction::Label(after_loop));
             }
             Node::ForStmt { init, condition, increment, body, .. } => {
                 // Generate code for the initialization
@@ -177,6 +194,9 @@ impl CodeGenerator {
 
                 // Loop start
                 let loop_start = self.current_instructions.len();
+
+                // Add a label for the loop start
+                self.current_instructions.push(Instruction::Label(loop_start));
 
                 // Generate code for the condition
                 if let Some(condition) = condition {
@@ -206,6 +226,9 @@ impl CodeGenerator {
                 // Update the jump out
                 let after_loop = self.current_instructions.len();
                 self.current_instructions[jump_out] = Instruction::JumpIfFalse(after_loop);
+
+                // Add a label for after the loop
+                self.current_instructions.push(Instruction::Label(after_loop));
             }
             Node::ForeachStmt { array, .. } => {
                 // This is a simplified implementation of foreach
@@ -231,9 +254,19 @@ impl CodeGenerator {
                 self.current_instructions.push(Instruction::Return);
             }
             Node::EchoStmt(expressions, _) => {
-                for expr in expressions {
+                // We need to check if this is a single expression or multiple expressions
+                // If it's a single expression, we'll use EchoLine
+                // If it's multiple expressions, we'll use Echo for all but the last one
+                let expr_count = expressions.len();
+                for (i, expr) in expressions.iter().enumerate() {
                     self.generate_node(expr)?;
-                    self.current_instructions.push(Instruction::Echo);
+                    if i == expr_count - 1 {
+                        // Last expression, add a newline
+                        self.current_instructions.push(Instruction::EchoLine);
+                    } else {
+                        // Not the last expression, don't add a newline
+                        self.current_instructions.push(Instruction::Echo);
+                    }
                 }
             }
             Node::VarDecl { name, initializer, .. } => {

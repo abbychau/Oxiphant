@@ -5,10 +5,11 @@ param (
     [string]$ScriptName
 )
 
-# Check if the executable exists
-$exePath = "tests\output\$ScriptName.exe"
-if (-not (Test-Path $exePath)) {
-    Write-Error "Executable not found: $exePath"
+# Find the most recent executable for this script
+$exePath = Get-ChildItem -Path "tests\output\$ScriptName*.exe" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
+
+if (-not $exePath) {
+    Write-Error "No executable found for script: $ScriptName"
     exit 1
 }
 
