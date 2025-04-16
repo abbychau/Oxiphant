@@ -1,8 +1,8 @@
 [package]
-name = "tinyphp-rs"
+name = "oxiphant"
 version = "0.1.0"
 edition = "2021"
-description = "A tiny PHP subset compiler written in Rust"
+description = "A PHP subset compiler written in Rust (oxidizing elephant)"
 authors = ["abbychau"]
 
 [dependencies]

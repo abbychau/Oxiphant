@@ -24,7 +24,7 @@ $outputAsm = "tests\output\$ScriptName-$timestamp.s"
 
 # Compile the script
 Write-Host "Compiling $scriptPath to $outputExe..."
-cargo run --bin tinyphp-rs $scriptPath $outputExe
+cargo run --bin oxiphant $scriptPath $outputExe
 
 # Check if compilation was successful
 if ($LASTEXITCODE -ne 0) {

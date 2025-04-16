@@ -1,8 +1,8 @@
-# String Concatenation in TinyPHP
+# String Concatenation in Oxiphant
 
 ## Current Implementation
 
-The current implementation of string concatenation in TinyPHP has some limitations:
+The current implementation of string concatenation in Oxiphant has some limitations:
 
 1. **Dot Operator**: The dot (`.`) operator for string concatenation is not fully implemented. When using the dot operator, the output will be a placeholder string (`<concatenated string>`) instead of the actual concatenated string.
 
@@ -37,7 +37,7 @@ echo $c; // Outputs: Hello, World!
 
 ## Future Improvements
 
-In future versions of TinyPHP, we plan to fully implement the dot operator for string concatenation. This will involve:
+In future versions of Oxiphant, we plan to fully implement the dot operator for string concatenation. This will involve:
 
 1. Properly allocating memory for the concatenated string
 2. Copying the concatenated string from the stack buffer to the string literals section

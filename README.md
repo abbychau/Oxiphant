@@ -1,14 +1,18 @@
-# TinyPHP-RS
+# Oxiphant
 
-A tiny PHP subset compiler written in Rust. This project compiles a subset of PHP to x86-64 assembly, which is then compiled to an executable using GCC.
+A PHP subset compiler written in Rust (oxidizing elephant). This project compiles a subset of PHP to x86-64 assembly, which is then compiled to an executable using GCC.
+
+![Oxiphant Logo](./logo.png)
 
 ## Overview
 
-TinyPHP-RS is a compiler that translates PHP code into executable binaries through a multi-stage compilation process. The compiler supports a subset of PHP features including variables, basic arithmetic operations, control flow statements, and simple I/O.
+Oxiphant is a compiler that translates PHP code into executable binaries through a multi-stage compilation process. The compiler supports a subset of PHP features including variables, basic arithmetic operations, control flow statements, and simple I/O.
+
+
 
 ## Data Flow
 
-The following diagram illustrates the data flow through the TinyPHP-RS compiler system:
+The following diagram illustrates the data flow through the Oxiphant compiler system:
 
 ```mermaid
 flowchart TD
@@ -89,7 +93,7 @@ flowchart TD
 ### Compiling a PHP Script
 
 ```bash
-cargo run --bin tinyphp-rs <input.php> [output.exe]
+cargo run --bin oxiphant <input.php> [output.exe]
 ```
 
 Or use the provided PowerShell script:
@@ -117,3 +121,15 @@ The `tests/` directory contains test scripts and utilities for testing the compi
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Why Oxiphant?
+
+The name "Oxiphant" is a fusion of two key elements that define this project:
+
+- **Oxi** from "oxidizing" - a nod to Rust, the programming language used to build this compiler. Rust is often associated with the term "oxidizing" (as opposed to "corroding"), symbolizing its focus on safety and performance.
+
+- **phant** from "elephant" - representing PHP, whose logo is the well-known blue elephant. PHP has been a cornerstone of web development since its creation in 1994.
+
+By combining these elements, "Oxiphant" captures the essence of the project: harnessing the power and safety of Rust to work with PHP code. It symbolizes the bridge between the modern systems programming world of Rust and the widespread web development ecosystem of PHP.
+
+Just as an elephant is known for its strength and memory, and oxidation represents transformation, Oxiphant aims to transform PHP code into efficient, compiled executables while maintaining the familiar syntax and features that PHP developers know and love.

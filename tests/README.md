@@ -1,6 +1,6 @@
-# TinyPHP-RS Testing
+# Oxiphant Testing
 
-This directory contains test scripts and utilities for testing the TinyPHP-RS compiler.
+This directory contains test scripts and utilities for testing the Oxiphant compiler.
 
 ## Directory Structure
 

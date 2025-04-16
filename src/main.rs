@@ -2,7 +2,7 @@ use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::process::{self, Command};
-use tinyphp_rs::asmgen::AsmGenerator;
+use oxiphant::asmgen::AsmGenerator;
 
 fn main() {
     // Parse command-line arguments
@@ -20,7 +20,7 @@ fn main() {
     let asm_file = format!("{}.s", input_file);
 
     // Compile the PHP file to bytecode
-    let compilation_result = tinyphp_rs::compile_file(input_file);
+    let compilation_result = oxiphant::compile_file(input_file);
 
     if compilation_result.is_err() {
         let err = compilation_result.err().unwrap();
