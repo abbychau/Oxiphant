@@ -128,8 +128,4 @@ The name "Oxiphant" is a fusion of two key elements that define this project:
 
 - **Oxi** from "oxidizing" - a nod to Rust, the programming language used to build this compiler. Rust is often associated with the term "oxidizing" (as opposed to "corroding"), symbolizing its focus on safety and performance.
 
-- **phant** from "elephant" - representing PHP, whose logo is the well-known blue elephant. PHP has been a cornerstone of web development since its creation in 1994.
-
-By combining these elements, "Oxiphant" captures the essence of the project: harnessing the power and safety of Rust to work with PHP code. It symbolizes the bridge between the modern systems programming world of Rust and the widespread web development ecosystem of PHP.
-
-Just as an elephant is known for its strength and memory, and oxidation represents transformation, Oxiphant aims to transform PHP code into efficient, compiled executables while maintaining the familiar syntax and features that PHP developers know and love.
+- **phant** from "elephant" - representing PHP, whose logo is the well-known blue elephant.
